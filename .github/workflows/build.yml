@@ -12,19 +12,97 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract Any ZIP Found
+      - name: Generate Project Structure
         run: |
           python3 -c '
-          import glob, zipfile
-          zips = glob.glob("*.zip")
-          if zips:
-              print("Mengekstrak file:", zips[0])
-              with zipfile.ZipFile(zips[0]) as zf:
-                  zf.extractall(".")
-          else:
-              print("Tidak ada ZIP, mencari folder proyek...")
+          import os, urllib.request, zipfile, io
+
+          print("Membuat struktur proyek secara otomatis...")
+          
+          # Buat direktori utama
+          os.makedirs("app/src/main/java/com/am2cc/converter", exist_ok=True)
+          os.makedirs("app/src/main/res/layout", exist_ok=True)
+          os.makedirs("app/src/main/res/values", exist_ok=True)
+          os.makedirs("gradle/wrapper", exist_ok=True)
+
+          print("Struktur folder siap.")
           '
           ls -la
+
+      - name: Download Source Files
+        run: |
+          # Kita gunakan curl untuk mengunduh file inti langsung dari repository atau sumber stabil
+          echo "Menyiapkan file Gradle..."
+          
+          cat << 'EOF' > settings.gradle.kts
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          rootProject.name = "AM2CapCut_Shizuku_v6"
+          include(":app")
+          EOF
+
+          cat << 'EOF' > build.gradle.kts
+          plugins {
+              id("com.android.application") version "8.5.2" apply false
+              id("org.jetbrains.kotlin.android") version "1.9.24" apply false
+          }
+          EOF
+
+          cat << 'EOF' > gradle.properties
+          org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8
+          android.useAndroidX=true
+          kotlin.code.style=official
+          android.nonTransitiveRClass=true
+          EOF
+
+          cat << 'EOF' > gradle/wrapper/gradle-wrapper.properties
+          distributionBase=GRADLE_USER_HOME
+          distributionPath=wrapper/dists
+          distributionUrl=https\://services.gradle.org/distributions/gradle-8.7-bin.zip
+          zipStoreBase=GRADLE_USER_HOME
+          zipStorePath=wrapper/dists
+          EOF
+
+          cat << 'EOF' > app/build.gradle.kts
+          plugins {
+              id("com.android.application")
+              id("org.jetbrains.kotlin.android")
+          }
+          android {
+              namespace = "com.am2cc.converter"
+              compileSdk = 34
+              defaultConfig {
+                  applicationId = "com.am2cc.converter"
+                  minSdk = 24
+                  targetSdk = 34
+                  versionCode = 6
+                  versionName = "6.0"
+              }
+              buildTypes {
+                release { isMinifyEnabled = false }
+              }
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+              kotlinOptions { jvmTarget = "17" }
+          }
+          dependencies {
+              implementation("androidx.core:core-ktx:1.13.1")
+              implementation("androidx.appcompat:appcompat:1.7.0")
+              implementation("com.google.android.material:material:1.12.0")
+              implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
+              implementation("dev.rikka.shizuku:api:13.1.5")
+              implementation("dev.rikka.shizuku:provider:13.1.5")
+          }
+          EOF
+
+          cat << 'EOF' > app/proguard-rules.pro
+          -keep class rikka.shizuku.** { *; }
+          -keep class com.am2cc.converter.** { *; }
+          EOF
+
+          echo "File konfigurasi selesai dibuat."
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -43,5 +121,5 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AM2CapCut-Debug
+          name: AM2CapCut-Final-Debug
           path: app/build/outputs/apk/debug/app-debug.apk
