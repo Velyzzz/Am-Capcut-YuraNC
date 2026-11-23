@@ -1,4 +1,4 @@
-name: Build AM2CapCut Shizuku v6 APK
+name: Build AM2CapCut Shizuku v6 Fixed APK
 
 on:
   push:
@@ -14,18 +14,15 @@ jobs:
 
       - name: Extract ZIP source
         run: |
-          ls -la
           python3 -c '
           import glob, zipfile
           zips = sorted(glob.glob("*.zip"))
-          assert zips, "ERROR: Belum ada file .zip di tab Code! Upload dulu AM2CapCut_Shizuku_v6_fixed.zip ke repository."
-          print("Mengekstrak:", zips[-1])
+          assert zips, "ERROR: Belum ada file .zip di repository!"
           with zipfile.ZipFile(zips[-1]) as zf:
               for m in zf.namelist():
                   if not m.startswith(".github/"):
                       zf.extract(m)
           '
-          ls -la
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
@@ -39,10 +36,14 @@ jobs:
           gradle-version: '8.7'
 
       - name: Build Debug APK
-        run: gradle assembleDebug --no-daemon --stacktrace
+        run: gradle assembleDebug --no-daemon 2>&1 | tee build.log; exit ${PIPESTATUS[0]}
+
+      - name: Show Error Summary
+        if: failure()
+        run: grep -B 2 -A 15 "FAILURE:" build.log || head -n 40 build.log
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AM2CapCut-Shizuku-v6-debug
+          name: AM2CapCut-Shizuku-v6-fixed-debug
           path: app/build/outputs/apk/debug/app-debug.apk
