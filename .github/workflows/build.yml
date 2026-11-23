@@ -12,16 +12,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Extract ZIP source
+      - name: Unzip Source Directly
         run: |
-          python3 -c '
-          import zipfile, os
-          zips = [f for f in os.listdir(".") if f.endswith(".zip")]
-          if zips:
-              print("Mengekstrak:", zips[0])
-              with zipfile.ZipFile(zips[0]) as zf:
-                  zf.extractall(".")
-          '
+          echo "=== Daftar File Sebelum Unzip ==="
+          ls -la
+
+          # Ekstrak langsung file ZIP yang ada di root
+          unzip -o AM2CapCut_Shizuku_v6_clean.zip
+
+          echo "=== Daftar File Setelah Unzip ==="
           ls -la
 
       - name: Set up JDK 17
