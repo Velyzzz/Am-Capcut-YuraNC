@@ -1,4 +1,4 @@
-name: Build AM2CapCut Shizuku v6 Stable APK
+name: Build AM2CapCut Stable APK
 
 on:
   push:
@@ -12,9 +12,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Unzip Source Directly
+      - name: Extract Any ZIP Found
         run: |
-          unzip -o AM2CapCut_Shizuku_v6_stable.zip
+          python3 -c '
+          import glob, zipfile
+          zips = glob.glob("*.zip")
+          if zips:
+              print("Mengekstrak file:", zips[0])
+              with zipfile.ZipFile(zips[0]) as zf:
+                  zf.extractall(".")
+          else:
+              print("Tidak ada ZIP, mencari folder proyek...")
+          '
           ls -la
 
       - name: Set up JDK 17
@@ -34,5 +43,5 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: AM2CapCut-Shizuku-v6-stable-debug
+          name: AM2CapCut-Debug
           path: app/build/outputs/apk/debug/app-debug.apk
