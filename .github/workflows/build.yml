@@ -12,15 +12,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Unzip Source Directly
+      - name: Unzip and Fix Structure
         run: |
-          echo "=== Daftar File Sebelum Unzip ==="
+          echo "=== Sebelum Unzip ==="
           ls -la
-
-          # Ekstrak langsung file ZIP yang ada di root
-          unzip -o AM2CapCut_Shizuku_v6_clean.zip
-
-          echo "=== Daftar File Setelah Unzip ==="
+          
+          # Ekstrak ZIP
+          unzip -o AM2CapCut_Shizuku_v6_clean.zip -d extracted_dir
+          
+          # Jika isi ZIP terbungkus dalam 1 folder utama, pindahkan ke root
+          if [ -d "extracted_dir/AM2CapCut_Shizuku_v6_clean" ]; then
+            mv extracted_dir/AM2CapCut_Shizuku_v6_clean/* .
+            mv extracted_dir/AM2CapCut_Shizuku_v6_clean/.[^.]* . 2>/dev/null || true
+          else
+            cp -r extracted_dir/* .
+          fi
+          
+          rm -rf extracted_dir AM2CapCut_Shizuku_v6_clean
+          
+          echo "=== Setelah Diratakan ke Root ==="
           ls -la
 
       - name: Set up JDK 17
